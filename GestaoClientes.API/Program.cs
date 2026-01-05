@@ -18,11 +18,6 @@ builder.Services.AddSwaggerGen(c =>
         Title = "Gestão de Clientes API",
         Version = "v1",
         Description = "API para gerenciamento de clientes seguindo Clean Architecture, DDD e CQRS com SQL Server",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Equipe de Desenvolvimento",
-            Email = "dev@gestao.com"
-        }
     });
 });
 
