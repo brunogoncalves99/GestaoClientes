@@ -25,7 +25,7 @@ namespace GestaoClientes.Application.Commands
                 var cnpj = Cnpj.Criar(request.Cnpj);
 
                 var clienteExistente = await _clienteRepository.ObterPorCnpjAsync(cnpj, cancellationToken);
-                if (clienteExistente is not null)
+                if (clienteExistente != null)
                 {
                     return Result<ClienteDto>.Falha("Já existe um cliente cadastrado com este CNPJ.");
                 }
