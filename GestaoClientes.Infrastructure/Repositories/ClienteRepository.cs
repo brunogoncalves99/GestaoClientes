@@ -1,87 +1,63 @@
 ﻿using GestaoClientes.Domain.Entities;
 using GestaoClientes.Domain.Interfaces;
 using GestaoClientes.Domain.ValueObjects;
+using GestaoClientes.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
-namespace GestaoClientes.Infrastructure.Repositories
+namespace GestaoClientes.Infrastructure.Repositories;
+
+public class ClienteRepository : IClienteRepository
 {
-    public class ClienteRepository : IClienteRepository
+    private readonly ClientesDbContext _context;
+
+    public ClienteRepository(ClientesDbContext context)
     {
-        private static readonly List<Cliente> _clientes = new();
-        private static readonly object _lock = new();
+        _context = context;
+    }
 
-        public Task AdicionarAsync(Cliente cliente, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                _clientes.Add(cliente);
-            }
-            return Task.CompletedTask;
-        }
-        public Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                var cliente = _clientes.FirstOrDefault(c => c.Id == id);
-                return Task.FromResult(cliente);
-            }
-        }
+    public async Task AdicionarAsync(Cliente cliente, CancellationToken cancellationToken = default)
+    {
+        await _context.Clientes.AddAsync(cliente, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 
-        public Task<Cliente?> ObterPorCnpjAsync(Cnpj cnpj, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                var cliente = _clientes.FirstOrDefault(c => c.Cnpj == cnpj);
-                return Task.FromResult(cliente);
-            }
-        }
+    public async Task<Cliente?> ObterPorIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
 
-        public Task<bool> ExistePorCnpjAsync(Cnpj cnpj, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                var existe = _clientes.Any(c => c.Cnpj == cnpj);
-                return Task.FromResult(existe);
-            }
-        }
+    public async Task<Cliente?> ObterPorCnpjAsync(Cnpj cnpj, CancellationToken cancellationToken = default)
+    {
+        return await _context.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Cnpj == cnpj, cancellationToken);
+    }
 
-        public Task<IEnumerable<Cliente>> ObterTodosAsync(CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                var clientes = _clientes.ToList();
-                return Task.FromResult<IEnumerable<Cliente>>(clientes);
-            }
-        }
+    public async Task<bool> ExistePorCnpjAsync(Cnpj cnpj, CancellationToken cancellationToken = default)
+    {
+        return await _context.Clientes
+            .AsNoTracking()
+            .AnyAsync(c => c.Cnpj == cnpj, cancellationToken);
+    }
 
-        public Task AtualizarAsync(Cliente cliente, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                var clienteExistente = _clientes.FirstOrDefault(c => c.Id == cliente.Id);
-                if (clienteExistente is not null)
-                {
-                    _clientes.Remove(clienteExistente);
-                    _clientes.Add(cliente);
-                }
-            }
-            return Task.CompletedTask;
-        }
+    public async Task<IEnumerable<Cliente>> ObterTodosAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Clientes
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
 
-        public Task RemoverAsync(Cliente cliente, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                _clientes.Remove(cliente);
-            }
-            return Task.CompletedTask;
-        }
+    public async Task AtualizarAsync(Cliente cliente, CancellationToken cancellationToken = default)
+    {
+        _context.Clientes.Update(cliente);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 
-        public static void LimparDados()
-        {
-            lock (_lock)
-            {
-                _clientes.Clear();
-            }
-        }
+    public async Task RemoverAsync(Cliente cliente, CancellationToken cancellationToken = default)
+    {
+        _context.Clientes.Remove(cliente);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
